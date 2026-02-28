@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login, authenticate
 import logging
 import json
+import requests
 from django.views.decorators.csrf import csrf_exempt
 from .populate import initiate
 
@@ -82,25 +83,96 @@ def get_cars(request):
     print(count)
     if(count == 0):
         initiate()
-    car_models = CarModel.objects.select_related('make')
+    car_models = CarModel.objects.select_related('car_make')
     cars = []
     for car_model in car_models:
-        cars.append({"CarModel": car_model.name, "CarMake": car_model.make.name})
+        cars.append({"CarModel": car_model.name, "CarMake": car_model.car_make.name})
     return JsonResponse({"CarModels":cars})
 
-# # Update the `get_dealerships` view to render the index page with
+# Update the `get_dealerships` view to render the index page with
 # a list of dealerships
-# def get_dealerships(request):
-# ...
+def get_dealerships(request):
+    try:
+        # Get dealers from the URL
+        url = "http://localhost:3030/fetchDealers"
+        # Get dealers from the URL
+        response = requests.get(url)
+        # Convert the response to a JSON object
+        dealerships = response.json()
+        # Return in the format expected by frontend
+        return JsonResponse({"status": 200, "dealers": dealerships})
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching dealerships: {e}")
+        return JsonResponse({"status": 500, "error": "Failed to fetch dealerships"})
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JsonResponse({"status": 500, "error": "Internal server error"})
+
+# Get dealerships by state
+def get_dealerships_by_state(request, state):
+    try:
+        if state == "All":
+            # If "All" is selected, return all dealers
+            return get_dealerships(request)
+        
+        # Get dealers from the URL filtered by state
+        url = f"http://localhost:3030/fetchDealers/{state}"
+        response = requests.get(url)
+        dealerships = response.json()
+        # Return in the format expected by frontend
+        return JsonResponse({"status": 200, "dealers": dealerships})
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching dealerships by state: {e}")
+        return JsonResponse({"status": 500, "error": "Failed to fetch dealerships"})
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JsonResponse({"status": 500, "error": "Internal server error"})
 
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
-# def get_dealer_reviews(request,dealer_id):
-# ...
+def get_dealer_reviews(request, dealer_id):
+    try:
+        url = f"http://localhost:3030/fetchReviews/dealer/{dealer_id}"
+        response = requests.get(url)
+        reviews = response.json()
+        return JsonResponse({"status": 200, "reviews": reviews})
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching dealer reviews: {e}")
+        return JsonResponse({"status": 500, "error": "Failed to fetch reviews"})
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JsonResponse({"status": 500, "error": "Internal server error"})
 
 # Create a `get_dealer_details` view to render the dealer details
-# def get_dealer_details(request, dealer_id):
-# ...
+def get_dealer_details(request, dealer_id):
+    try:
+        url = f"http://localhost:3030/fetchDealer/{dealer_id}"
+        response = requests.get(url)
+        dealer = response.json()
+        # Return as array since frontend expects dealer[0]
+        return JsonResponse({"status": 200, "dealer": [dealer]})
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching dealer details: {e}")
+        return JsonResponse({"status": 500, "error": "Failed to fetch dealer"})
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JsonResponse({"status": 500, "error": "Internal server error"})
 
 # Create a `add_review` view to submit a review
-# def add_review(request):
-# ...
+@csrf_exempt
+def add_review(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            # Post review to Node backend
+            url = "http://localhost:3030/insert_review"
+            response = requests.post(url, json=data)
+            review = response.json()
+            return JsonResponse({"status": 200})
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error posting review: {e}")
+            return JsonResponse({"status": 500, "error": "Failed to post review"})
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return JsonResponse({"status": 500, "error": "Internal server error"})
+    else:
+        return JsonResponse({"status": 405, "error": "Method not allowed"})
