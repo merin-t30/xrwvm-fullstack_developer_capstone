@@ -15,20 +15,20 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from .populate import initiate
 
-
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
 
 # Create your views here.
 
+
 # Create a `login_request` view to handle sign in request
 @csrf_exempt
 def login_user(request):
     # Get username and password from request.POST dictionary
     data = json.loads(request.body)
-    username = data['userName']
-    password = data['password']
+    username = data["userName"]
+    password = data["password"]
     # Try to check if provide credential can be authenticated
     user = authenticate(username=username, password=password)
     data = {"userName": username}
@@ -38,24 +38,26 @@ def login_user(request):
         data = {"userName": username, "status": "Authenticated"}
     return JsonResponse(data)
 
+
 # Create a `logout_request` view to handle sign out request
 def logout_request(request):
     logout(request)
     data = {"userName": ""}
     return JsonResponse(data)
 
+
 # Create a `registration` view to handle sign up request
 @csrf_exempt
 def registration(request):
     context = {}
 
-	# Load JSON data from the request body
+    # Load JSON data from the request body
     data = json.loads(request.body)
-    username = data['userName']
-    password = data['password']
-    first_name = data['firstName']
-    last_name = data['lastName']
-    email = data['email']
+    username = data["userName"]
+    password = data["password"]
+    first_name = data["firstName"]
+    last_name = data["lastName"]
+    email = data["email"]
     username_exist = False
     email_exist = False
     try:
@@ -69,25 +71,33 @@ def registration(request):
     # If it is a new user
     if not username_exist:
         # Create user in auth_user table
-        user = User.objects.create_user(username=username, first_name=first_name, last_name=last_name,password=password, email=email)
+        user = User.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            email=email,
+        )
         # Login the user and redirect to list page
         login(request, user)
-        data = {"userName":username,"status":"Authenticated"}
+        data = {"userName": username, "status": "Authenticated"}
         return JsonResponse(data)
-    else :
-        data = {"userName":username,"error":"Already Registered"}
+    else:
+        data = {"userName": username, "error": "Already Registered"}
         return JsonResponse(data)
+
 
 def get_cars(request):
     count = CarMake.objects.filter().count()
     print(count)
-    if(count == 0):
+    if count == 0:
         initiate()
-    car_models = CarModel.objects.select_related('car_make')
+    car_models = CarModel.objects.select_related("car_make")
     cars = []
     for car_model in car_models:
         cars.append({"CarModel": car_model.name, "CarMake": car_model.car_make.name})
-    return JsonResponse({"CarModels":cars})
+    return JsonResponse({"CarModels": cars})
+
 
 # Update the `get_dealerships` view to render the index page with
 # a list of dealerships
@@ -108,13 +118,14 @@ def get_dealerships(request):
         logger.error(f"Unexpected error: {e}")
         return JsonResponse({"status": 500, "error": "Internal server error"})
 
+
 # Get dealerships by state
 def get_dealerships_by_state(request, state):
     try:
         if state == "All":
             # If "All" is selected, return all dealers
             return get_dealerships(request)
-        
+
         # Get dealers from the URL filtered by state
         url = f"http://localhost:3030/fetchDealers/{state}"
         response = requests.get(url)
@@ -127,6 +138,7 @@ def get_dealerships_by_state(request, state):
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         return JsonResponse({"status": 500, "error": "Internal server error"})
+
 
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
 def get_dealer_reviews(request, dealer_id):
@@ -141,6 +153,7 @@ def get_dealer_reviews(request, dealer_id):
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         return JsonResponse({"status": 500, "error": "Internal server error"})
+
 
 # Create a `get_dealer_details` view to render the dealer details
 def get_dealer_details(request, dealer_id):
@@ -157,10 +170,11 @@ def get_dealer_details(request, dealer_id):
         logger.error(f"Unexpected error: {e}")
         return JsonResponse({"status": 500, "error": "Internal server error"})
 
+
 # Create a `add_review` view to submit a review
 @csrf_exempt
 def add_review(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             data = json.loads(request.body)
             # Post review to Node backend
