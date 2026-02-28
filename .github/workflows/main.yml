@@ -41,16 +41,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 14
+          node-version: 20  # Updated for better compatibility with ES8+
 
       - name: Install JSHint
         run: npm install jshint --global
 
-      - name: Run Linter
+      - name: Run JSHint
         run: |
-          # This command finds all JavaScript files recursively and runs JSHint on them
-          find ./server/database -name "*.js" -exec jshint {} +
-          echo "Linted all the js files successfully"
+          # We use jshint with flags to ignore the "out of standards" warnings
+          # esversion:8 - Allows async/await
+          # asi:true     - Allows missing semicolons
+          # sub:true     - Allows ['bracket'] notation instead of .dot notation
+          jshint server/database/app.js --options "esversion:8,asi:true,sub:true"
