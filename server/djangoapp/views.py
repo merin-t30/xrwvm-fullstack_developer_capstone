@@ -1,4 +1,4 @@
-from django.shortcuts import render
+# from django.shortcuts import render
 # from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
 # from django.shortcuts import get_object_or_404, render, redirect
@@ -64,9 +64,10 @@ def registration(request):
         # Check if user already exists
         User.objects.get(username=username)
         username_exist = True
-    except:
+    except Exception as e:
         # If not, simply log this is a new user
         logger.debug("{} is new user".format(username))
+        print(e)
 
     # If it is a new user
     if not username_exist:
@@ -180,7 +181,7 @@ def add_review(request):
             # Post review to Node backend
             url = "http://localhost:3030/insert_review"
             response = requests.post(url, json=data)
-            # review = response.json()
+            logger.info(f"Response from Node backend: {response.json()}")
             return JsonResponse({"status": 200})
         except requests.exceptions.RequestException as e:
             logger.error(f"Error posting review: {e}")

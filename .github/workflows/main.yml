@@ -51,8 +51,8 @@ jobs:
 
       - name: Run JSHint
         run: |
-          # We use jshint with flags to ignore the "out of standards" warnings
-          # esversion:8 - Allows async/await
-          # asi:true     - Allows missing semicolons
-          # sub:true     - Allows ['bracket'] notation instead of .dot notation
-          jshint server/database/app.js --options "esversion:8,asi:true,sub:true"
+          # Create a temporary config file with your rules
+          echo '{"esversion": 8, "asi": true, "sub": true}' > .jshintrc
+          # Run jshint using that config file
+          jshint --config .jshintrc server/database/app.js
+          echo "JavaScript linting completed successfully"
